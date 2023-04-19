@@ -8,89 +8,105 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Flutter Socket.io Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
+
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
   int dx = 500;
   int dy = 300;
-
   late Socket socket;
+
   @override
   void initState() {
-    socketconnect();
-    // TODO: implement initState
     super.initState();
+    _socketConnect();
+  }
+
+  @override
+  void dispose() {
+    socket.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(dx.toString() + ',' + dy.toString()),
-        ),
-        body: Stack(
-          children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image: AssetImage('assets/img/map.png'),
-                      fit: BoxFit.cover)),
-            ),
-            Positioned(
-              top: dy.toDouble(),
-              left: dx.toDouble(),
-              child: Container(
-                width: 30,
-                height: 30,
-                decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: Colors.red),
+      appBar: AppBar(
+        title: Text('$dx, $dy'),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/img/map.png'),
+                fit: BoxFit.cover,
               ),
-            )
-          ],
-        ));
+            ),
+          ),
+          Positioned(
+            top: dy.toDouble(),
+            left: dx.toDouble(),
+            child: Container(
+              width: 30,
+              height: 30,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red,
+              ),
+            ),
+          )
+        ],
+      ),
+    );
   }
 
-  void socketconnect() {
+  void _socketConnect() {
     socket = io(
-        'http://192.168.137.78:5000',
-        OptionBuilder()
-            .setTransports(['websocket']) // for Flutter or Dart VM
-            .disableAutoConnect() // disable auto-connection
-            .setExtraHeaders({'message': 'bar'}) // optional
-            .build());
+      'http://192.168.137.78:5000',
+      OptionBuilder()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .setExtraHeaders({'message': 'bar'})
+          .build(),
+    );
     socket.connect();
     socket.onConnect((_) {
-      print('connect');
+      print('Connected to socket.io server');
     });
-    socket.onDisconnect((_) => print('disconnect'));
-    socket.on('fromServer', (_) => print(_));
+    socket.onDisconnect((_) {
+      print('Disconnected from socket.io server');
+    });
+    socket.on('fromServer', (data) {
+      print('Received message from server: $data');
+    });
     socket.on('dx', (data) {
-      print(data.toString());
+      print('Received dx: $data');
       setState(() {
         dx = data;
       });
     });
     socket.on('dy', (data) {
-      print(data.toString());
+      print('Received dy: $data');
       setState(() {
         dy = data;
       });
